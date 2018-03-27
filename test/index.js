@@ -82,6 +82,14 @@ describe('CloudApi client', () => {
         process.env.NODE_ENV = 'test';
       }
     });
+
+    it('includes accept-version header', () => {
+      const api = new CloudApi({
+        key, keyId, log: () => { }
+      });
+      expect(api).to.exist();
+      expect(api._wreck._defaults.headers).to.contain({'Accept-Version': '~8'});
+    });
   });
 
   describe('fetch tests', () => {
