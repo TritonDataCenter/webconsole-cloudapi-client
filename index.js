@@ -8,7 +8,7 @@ const Wreck = require('wreck');
 const Boom = require('boom');
 
 module.exports = class CloudApi {
-  constructor({ token, url, keyId, key, log } = {}) {
+  constructor ({ token, url, keyId, key, log } = {}) {
     const env = process.env.NODE_ENV;
     Assert(key, 'key is required');
     Assert(keyId, 'keyId is required');
@@ -27,7 +27,7 @@ module.exports = class CloudApi {
     this.fetch = this.fetch.bind(this);
   }
 
-  _authHeaders() {
+  _authHeaders () {
     const now = new Date().toUTCString();
     const signer = Crypto.createSign('sha256');
     signer.update(now);
@@ -35,10 +35,11 @@ module.exports = class CloudApi {
 
     const headers = {
       'Content-Type': 'application/json',
+      'Accept-Version': '~8',
       Date: now,
       Authorization: `Signature keyId="${
         this._keyId
-        }",algorithm="rsa-sha256" ${signature}`
+      }",algorithm="rsa-sha256" ${signature}`
     };
 
     if (this._token) {
@@ -48,7 +49,7 @@ module.exports = class CloudApi {
     return headers;
   }
 
-  async _request(path = '/', options = {}) {
+  async _request (path = '/', options = {}) {
     const wreckOptions = {
       json: true,
       payload: options.payload,
@@ -80,7 +81,7 @@ module.exports = class CloudApi {
     }
   }
 
-  async fetch(path = '/', options = {}) {
+  async fetch (path = '/', options = {}) {
     const { payload, res } = await this._request(path, options);
     return options.includeRes ? { payload, res } : payload;
   }
