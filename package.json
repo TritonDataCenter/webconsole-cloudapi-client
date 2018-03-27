@@ -2,11 +2,12 @@
   "name": "cloudapi-client",
   "version": "0.0.0",
   "description": "Triton CloudApi fetch client",
-  "main": "index.js",
+  "main": "lib",
   "scripts": {
     "lint": "belly-button -f",
     "pretest": "yarn lint",
-    "test": "lab -c"
+    "test": "lab -t 100",
+    "test-cov-html": "lab -t 100 -r html -o coverage.html"
   },
   "repository": {
     "type": "git",
