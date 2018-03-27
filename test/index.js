@@ -6,7 +6,7 @@ const Assert = require('assert');
 const Lab = require('lab');
 const { expect } = require('code');
 const TestDouble = require('testdouble');
-const CloudApi = require('../index');
+const CloudApi = require('../');
 const Boom = require('boom');
 
 const lab = exports.lab = Lab.script();
@@ -132,7 +132,40 @@ describe('CloudApi client', () => {
       Assert(pathCaptor.value === 'bacon?strips=2');
     });
 
-    it('supports post', async () => {
+    it('defaults to GET', async () => {
+      const api = new CloudApi({
+        url: 'http://localhost:5555/api', key, keyId, log: () => { }
+      });
+      const wreck = TestDouble.replace(api._wreck, 'get');
+      TestDouble.when(wreck(TestDouble.matchers.anything(), TestDouble.matchers.anything()))
+        .thenResolve({ payload: { test: 1 }, res: {} });
+      const results = await api.fetch('/api');
+      expect(results).to.equal({ test: 1 });
+    });
+
+    it('defaults to GET with a falsy HTTP method', async () => {
+      const api = new CloudApi({
+        url: 'http://localhost:5555/api', key, keyId, log: () => { }
+      });
+      const wreck = TestDouble.replace(api._wreck, 'get');
+      TestDouble.when(wreck(TestDouble.matchers.anything(), TestDouble.matchers.anything()))
+        .thenResolve({ payload: { test: 1 }, res: {} });
+      const results = await api.fetch('/api', { method: false });
+      expect(results).to.equal({ test: 1 });
+    });
+
+    it('supports HEAD', async () => {
+      const api = new CloudApi({
+        url: 'http://localhost:5555/api', key, keyId, log: () => { }
+      });
+      const wreck = TestDouble.replace(api._wreck, 'request');
+      TestDouble.when(wreck('head', TestDouble.matchers.anything(), TestDouble.matchers.anything()))
+        .thenResolve({ headers: { bacon: 'tasty' } });
+      const { res } = await api.fetch('/api', { method: 'head', includeRes: true });
+      expect(res.headers.bacon).to.equal('tasty');
+    });
+
+    it('supports POST', async () => {
       const api = new CloudApi({
         url: 'http://localhost:5555/api', key, keyId, log: () => { }
       });
@@ -196,6 +229,22 @@ describe('CloudApi client', () => {
       } catch (err) {
         expect(err).to.exist();
         expect(err.output.payload).to.contain({ statusCode: 400, error: 'Bad Request', message: 'bacon cannot be limp' });
+      }
+    });
+
+    it('returns only the error message on error when no payload exists', async () => {
+      const api = new CloudApi({ url: 'http://localhost:5555/api', key, keyId, log: () => { } });
+      const wreck = TestDouble.replace(api._wreck, 'get');
+      TestDouble.when(wreck(TestDouble.matchers.anything(), TestDouble.matchers.anything()))
+        .thenReject(Boom.badRequest('no bacon for you', { payload: '' }));
+      try {
+        const results = await api.fetch('bacon', {
+          query: { kind: 'limp' }
+        });
+        expect(results).to.not.exist();
+      } catch (err) {
+        expect(err).to.exist();
+        expect(err.output.payload).to.contain({ statusCode: 400, error: 'Bad Request' });
       }
     });
   });
