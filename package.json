@@ -28,6 +28,7 @@
     "belly-button": "4.x.x",
     "code": "5.x.x",
     "lab": "15.x.x",
+    "opentracing": "0.14.x",
     "testdouble": "3.6.x"
   }
 }

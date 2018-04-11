@@ -1,13 +1,14 @@
 'use strict';
 
-const Fs = require('fs');
-const Path = require('path');
 const Assert = require('assert');
-const Lab = require('lab');
+const Boom = require('boom');
 const { expect } = require('code');
+const Fs = require('fs');
+const Lab = require('lab');
+const { MockTracer } = require('opentracing');
+const Path = require('path');
 const TestDouble = require('testdouble');
 const CloudApi = require('../');
-const Boom = require('boom');
 
 const lab = exports.lab = Lab.script();
 const { afterEach, describe, it } = lab;
@@ -246,6 +247,35 @@ describe('CloudApi client', () => {
         expect(err).to.exist();
         expect(err.output.payload).to.contain({ statusCode: 400, error: 'Bad Request' });
       }
+    });
+
+    it('creates span for request', async () => {
+      const tracer = new MockTracer();
+      const api = new CloudApi({
+        url: 'http://localhost:5555/api', key, keyId, log: () => { }, tracer
+      });
+      const wreck = TestDouble.replace(api._wreck, 'get');
+      TestDouble.when(wreck(TestDouble.matchers.anything(), TestDouble.matchers.anything()))
+        .thenResolve({ payload: { test: 1 }, res: { status: 200 } });
+      const results = await api.fetch('bacon', { includeRes: true });
+      expect(results).to.equal({ payload: { test: 1 }, res: { status: 200 } });
+      expect(tracer.report().spans[0]._operationName).to.equal('get bacon');
+    });
+
+    it('creates child span for request when provided with a parent span', async () => {
+      const tracer = new MockTracer();
+      const span = tracer.startSpan('parent');
+      const api = new CloudApi({
+        url: 'http://localhost:5555/api', key, keyId, log: () => { }, tracer
+      });
+      const wreck = TestDouble.replace(api._wreck, 'get');
+      TestDouble.when(wreck(TestDouble.matchers.anything(), TestDouble.matchers.anything()))
+        .thenResolve({ payload: { test: 1 }, res: { status: 200 } });
+      const results = await api.fetch('bacon', { includeRes: true, span });
+      expect(results).to.equal({ payload: { test: 1 }, res: { status: 200 } });
+      span.finish();
+      expect(tracer.report().spans[0]._operationName).to.equal('parent');
+      expect(tracer.report().spans[1]._operationName).to.equal('get bacon');
     });
   });
 });
