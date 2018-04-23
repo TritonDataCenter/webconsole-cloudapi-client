@@ -10,6 +10,7 @@ CloudApi fetch client
 - `key` - private key used to sign request, must be a string or an object with [`{ key, passphrase }`](https://nodejs.org/api/crypto.html#crypto_sign_sign_privatekey_outputformat)
 - `keyId` - CloudAPI formatted key ID, usually in the form 'user/keys/md5 id'
 - `url` - base URL for CloudAPI service
+- `pathPrefix` - default path prefix for all requests, defaults to `'/my'`.
 - `log` - function used to log errors for debugging purposes
 - `tracer` - optional object used for OpenTracing tracing. Must have function for `startSpan`
 

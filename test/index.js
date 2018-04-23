@@ -120,6 +120,21 @@ describe('CloudApi client', () => {
       expect(results).to.equal({ payload: { test: 1 }, res: { status: 200 } });
     });
 
+    it('/my is default pathPrefix', () => {
+      const api = new CloudApi({
+        url: 'http://localhost:5555/api', key, keyId, log: () => { }
+      });
+      expect(api._wreck._defaults.baseUrl).to.equal('http://localhost:5555/api/my');
+    });
+
+    it('can change pathPrefix', () => {
+      const api = new CloudApi({
+        url: 'http://localhost:5555/api', key, keyId, log: () => { }, pathPrefix: '/test'
+      });
+      expect(api._wreck._defaults.baseUrl).to.equal('http://localhost:5555/api/test');
+    });
+
+
     it('passes querystring data', async () => {
       const api = new CloudApi({
         url: 'http://localhost:5555/api', key, keyId, log: () => { }
